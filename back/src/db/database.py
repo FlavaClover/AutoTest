@@ -26,8 +26,10 @@ class DataBase:
 
     @classmethod
     @database.transaction()
-    async def function(cls, name: str, **params):
+    async def function(cls, name: str, fetch_one=True, **params):
         sql = 'SELECT * FROM ' + name + '(' + ', '.join(map(lambda x: ':' + x, params.keys())) + ')'
 
         print(sql)
-        return await database.fetch_one(query=sql, values=params)
+        if fetch_one:
+            return await database.fetch_one(query=sql, values=params)
+

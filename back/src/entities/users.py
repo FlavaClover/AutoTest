@@ -1,7 +1,7 @@
 import datetime
-from typing import Optional
+from typing import Optional, Union
 
-from fastapi import Cookie
+from fastapi import Cookie, HTTPException, status
 
 from src.db.database import DataBase
 from pydantic import BaseModel
@@ -36,7 +36,23 @@ class UserManager:
 
     @classmethod
     async def get_current_user(cls, session: Optional[str] = Cookie(None)):
-        print(session)
-        if session is None:
-            return None
-        return User(login='current', pwd='pwd')
+        data = await DataBase.function('f_get_user_by_session', session=session)
+
+        if data is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        else:
+            await DataBase.function('f_update_session', session=session)
+
+        return User(**data)
+
+    @classmethod
+    async def create_session(cls, user: Union[User, int]):
+        if isinstance(user, int):
+            result = await DataBase.function('f_create_session', user_id=user)
+        else:
+            result = await DataBase.function('f_create_session', user_id=user.id)
+        return result.f_create_session
+
+    @classmethod
+    async def logout(cls, session: str):
+        await DataBase.function('f_cancel_session', session=session)
