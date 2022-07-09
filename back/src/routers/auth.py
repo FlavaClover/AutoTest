@@ -3,15 +3,17 @@ from typing import Union
 from fastapi import APIRouter, Depends, Request, HTTPException, status, Cookie
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-
-from src.entities.users import UserManager, User
+import logging
+from src.entities.user import UserManager, User
 
 
 router = APIRouter()
+logger = logging.getLogger('api')
 
 
 @router.get('/me')
-async def me(user: User = Depends(UserManager.get_current_user)):
+async def me(user: User = Depends()):
+    logger.info(user.login + ' me.')
     return user
 
 
@@ -35,11 +37,13 @@ async def authenticate(form_data: OAuth2PasswordRequestForm = Depends()):
     session = await UserManager.create_session(user)
     response = JSONResponse(content='Successfully')
     response.set_cookie(key='session', value=session)
+
+    logger.info(user.login + ' successfully authenticated.')
     return response
 
 
 @router.post('/logout')
-async def logout(user: User = Depends(UserManager.get_current_user),
+async def logout(user: User = Depends(),
                  session: Union[str, None] = Cookie(default=None),):
     await UserManager.logout(session)
 

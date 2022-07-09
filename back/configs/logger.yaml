@@ -1,0 +1,55 @@
+version : 1
+disable_existing_loggers: False
+formatters :
+  api_formatter:
+    format : '%(levelname)s:     %(asctime)s | %(message)s'
+    datefmt : '%Y-%m-%d %H:%M:%S'
+    class : logging.Formatter
+  database_formatter:
+    format: '%(levelname)s:     %(asctime)s | %(sql)s : %(result)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    class: src.logging.formatters.DataBaseFormatter
+    use_colors: True
+  uvicorn_default_formatter:
+    (): uvicorn.logging.DefaultFormatter
+    format: '%(levelprefix)s %(message)s'
+    use_colors: null
+  uvicorn_access_formatter:
+    (): 'uvicorn.logging.AccessFormatter'
+    format: '%(levelprefix)s %(asctime)s | %(client_addr)s - "%(request_line)s" %(status_code)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+handlers:
+  api_console:
+    formatter: api_formatter
+    class: logging.StreamHandler
+    stream : ext://sys.stdout
+  database_console:
+    formatter: database_formatter
+    class: logging.StreamHandler
+    stream: ext://sys.stdout
+  uvicorn_default_handler:
+    formatter: uvicorn_default_formatter
+    class: logging.StreamHandler
+    stream: ext://sys.stderr
+  uvicorn_access_handler:
+    formatter: uvicorn_access_formatter
+    class: logging.StreamHandler
+    stream: ext://sys.stdout
+loggers:
+  api:
+    qualname: api
+    handlers: [api_console]
+    level: INFO
+  database:
+    qualname: database
+    handlers: [database_console]
+    level: INFO
+  uvicorn.error:
+    level: INFO
+  uvicorn:
+    level: INFO
+    handlers: [uvicorn_default_handler]
+  uvicorn.access:
+    level: INFO
+    handlers: [uvicorn_access_handler]
+    propagate: False
