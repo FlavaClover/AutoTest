@@ -5,6 +5,12 @@ import databases
 
 class DataBaseFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
+        if record.result is None:
+            return super(DataBaseFormatter, self).format(record)
+
+        if isinstance(record.result, str):
+            return super(DataBaseFormatter, self).format(record)
+
         result = list(map(lambda e: ', '.join(list(map(lambda x: str(x), list(e.values())))), record.result)) \
             if isinstance(record.result, list) else str(list(record.result.values()))
 

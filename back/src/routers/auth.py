@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 from fastapi import APIRouter, Depends, Request, HTTPException, status, Cookie
 from fastapi.responses import JSONResponse
@@ -11,13 +11,13 @@ router = APIRouter()
 logger = logging.getLogger('api')
 
 
-@router.get('/me')
+@router.get('/me', response_model=User)
 async def me(user: User = Depends()):
     logger.info(user.login + ' me.')
     return user
 
 
-@router.get('/all_users')
+@router.get('/all_users', response_model=List[User])
 async def all_users():
     return await UserManager.all_users()
 
@@ -49,5 +49,13 @@ async def logout(user: User = Depends(),
 
     response = JSONResponse(content='Successfully')
     response.delete_cookie('session')
+
+    return response
+
+
+@router.get('/test')
+async def test():
+    response = JSONResponse(content={'result': 'ok'})
+    response.set_cookie(key='key', value='value')
 
     return response

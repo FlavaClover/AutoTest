@@ -6,7 +6,7 @@ formatters :
     datefmt : '%Y-%m-%d %H:%M:%S'
     class : logging.Formatter
   database_formatter:
-    format: '%(levelname)s:     %(asctime)s | %(sql)s : %(result)s'
+    format: '%(levelname)s:     %(asctime)s | %(msg)s %(sql)s : %(result)s'
     datefmt: '%Y-%m-%d %H:%M:%S'
     class: src.logging.formatters.DataBaseFormatter
     use_colors: True
