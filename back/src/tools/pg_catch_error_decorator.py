@@ -3,7 +3,7 @@ from psycopg2.errors import UndefinedColumn, InvalidColumnReference, UndefinedTa
 from fastapi import HTTPException, status
 from functools import wraps
 from asyncpg.exceptions import UndefinedColumnError, InvalidColumnReferenceError, UndefinedTableError, \
-    PostgresSyntaxError, InFailedSQLTransactionError, NotNullViolationError
+    PostgresSyntaxError, InFailedSQLTransactionError, NotNullViolationError, PostgresError
 
 
 def pg_catch_error_decorator(func):
@@ -41,12 +41,12 @@ def pg_catch_error_decorator(func):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(e)
             )
-        except HTTPException as e:
-            raise e
-        except Exception as e:
+        except PostgresError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(e)
             )
+        except HTTPException as e:
+            raise e
 
     return wrapper

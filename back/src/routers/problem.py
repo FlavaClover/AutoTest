@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status, File, Response, Depends
 from src.entities.problem import ProblemManager, Problem, Test
 from src.entities.user import User
 from src.tools.pg_catch_error_decorator import pg_catch_error_decorator
+import io
 from typing import List
 import subprocess
 
@@ -47,32 +48,19 @@ async def get_tests(id_problem: int, _: User = Depends()):
 @pg_catch_error_decorator
 async def testing(id_problem: int, code: bytes = File(), user: User = Depends()):
     tests = await ProblemManager.get_tests(id_problem)
-    script_name = 'scripts/problem' + str(id_problem) + user.login + '.py'
-    with open(script_name, 'wb') as source:
-        source.write(code)
 
     test_result: List[bool] = list()
     for test in tests:
+        output_actual = subprocess.check_output(['python3.10', '-c', code.decode()], input=test.input_file)
 
-        test_input = script_name + '_input_test.txt'
-        test_output = script_name + '_output_test.txt'
-        test_output_actual = script_name + '_output_test_actual.txt'
+        output_actual = output_actual.decode().strip('\n')
+        output_expect = test.output_file.decode().strip('\n')
 
-        with open(test_input, 'wb') as inp:
-            inp.write(test.input_file)
-
-        with open(test_output, 'wb') as out:
-            out.write(test.output_file)
-
-        subprocess.Popen(['python3.10', script_name],
-                         stdin=open(test_input, 'r'),
-                         stdout=open(test_output_actual, 'wb')).wait()
-
-        with open(test_output_actual, 'rb') as actual:
-            data = actual.read().decode().strip('\n')
-            if data == test.output_file.decode().strip('\n'):
-                test_result.append(True)
-            else:
-                test_result.append(False)
+        test_result.append({
+            'result': output_expect == output_actual,
+            'expected': output_expect,
+            'actual': output_actual,
+            'input': test.input_file.decode()
+        })
 
     return test_result
