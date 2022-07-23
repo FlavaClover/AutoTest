@@ -37,11 +37,7 @@ class DataBase:
 
     @classmethod
     async def insert(cls, table: str, values: dict, remove_none=True):
-        if remove_none:
-            values = {k: v for k, v in values.items() if v is not None}
-
-        sql = 'INSERT INTO ' + table + '(' + ','.join(values.keys()) + ') VALUES (' \
-              + ','.join(map(lambda x: ':' + x, values.keys())) + ') RETURNING id'
+        sql, values = cls.__obj_to_sql(table, values, remove_none=remove_none)
 
         logger.info('Executing:', extra={'sql': sql, 'result': '...'})
         try:
@@ -55,6 +51,36 @@ class DataBase:
             logger.info('Executed:', extra={'sql': sql, 'result': data})
 
             return id_obj
+
+    @classmethod
+    async def insert_many(cls, table: str, values: List[dict], remove_none=True):
+        async with cls._database.transaction():
+            for value in values:
+                sql, value = cls.__obj_to_sql(table, value, remove_none=remove_none)
+                logger.info('Executing:', extra={'sql': sql, 'result': '...'})
+                try:
+                    data = await cls._database.fetch_one(query=sql, values=value)
+                except asyncpg.exceptions.PostgresError as e:
+                    logger.info('Executed:', extra={'sql': sql, 'result': str(e)})
+                    raise e
+                else:
+                    logger.info('Executed:', extra={'sql': sql, 'result': data})
+
+    @classmethod
+    async def update(cls, table: str, values: dict, where: str = None):
+        sql = 'UPDATE ' + table + ' SET ' + ', '.join([str(i) + ' = :' + str(i) for i in values])
+        if where is not None:
+            sql += ' WHERE ' + where
+
+        logger.info('Executing:', extra={'sql': sql, 'result': '...'})
+        try:
+            async with cls._database.transaction():
+                data = await cls._database.execute(sql, values=values)
+        except asyncpg.exceptions.PostgresError as e:
+            logger.info('Executed:', extra={'sql': sql, 'result': str(e)})
+            raise e
+        else:
+            logger.info('Executed:', extra={'sql': sql, 'result': data})
 
     @classmethod
     async def function(cls, name: str, fetch_one=True, **params):
@@ -72,7 +98,6 @@ class DataBase:
             logger.info('Executed:', extra={'sql': sql, 'result': str(e)})
             raise e
         else:
-            print(params)
             logger.info('Executed:', extra={'sql': sql, 'result': data})
 
         return data
@@ -84,3 +109,13 @@ class DataBase:
     @classmethod
     async def disconnect(cls):
         await cls._database.disconnect()
+
+    @staticmethod
+    def __obj_to_sql(table, values, remove_none=True):
+        if remove_none:
+            values = {k: v for k, v in values.items() if v is not None}
+
+        sql = 'INSERT INTO ' + table + '(' + ','.join(values.keys()) + ') VALUES (' \
+              + ','.join(map(lambda x: ':' + x, values.keys())) + ') RETURNING id'
+
+        return sql, values
