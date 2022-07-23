@@ -1,8 +1,9 @@
 import datetime
 from typing import Optional, Union
-
+import hashlib
+import os
 from fastapi import Cookie, HTTPException, status
-
+import crypt
 from src.db.database import DataBase
 from pydantic import BaseModel
 
@@ -11,6 +12,7 @@ class User(BaseModel):
     id: Optional[int]
     login: str
     pwd: str
+    salt: Optional[str]
     last_login: Optional[datetime.datetime]
 
 
@@ -23,16 +25,26 @@ class UserManager:
         return await DataBase.select(table='users')
 
     @classmethod
-    async def create_user(cls, login: str, pwd: str):
-        return await DataBase.function('f_add_user', login=login, pwd=pwd)
+    async def create_user(cls, user: User):
+        salt = crypt.mksalt()
+        key = crypt.crypt(user.pwd, salt)
+
+        user = User(login=user.login, pwd=key, salt=salt)
+
+        user.id = await DataBase.insert('users', values=user.dict())
+
+        return user
 
     @classmethod
     async def get_user(cls, login: str, pwd: str):
-        data = await DataBase.function('f_get_user', login=login, pwd=pwd)
+        data = await DataBase.select('users', where='login = :login', params={'login': login}, scalar=True)
         if data is None:
             return None
+        user = User(**data)
+        if crypt.crypt(pwd, user.salt) == user.pwd:
+            return user
         else:
-            return User(**data)
+            return None
 
     @classmethod
     async def get_current_user(cls, session: Optional[str] = Cookie(None)):
