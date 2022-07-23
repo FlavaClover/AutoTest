@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException, status, File, Response, Depends
-from src.entities.problem import ProblemManager, Problem, Test
-from src.entities.user import User
+from fastapi import APIRouter, HTTPException, status, File, Response, Depends, BackgroundTasks
+from src.entities.problem import ProblemManager
+from src.entities.solve import SolveManager
+from src.entities.schemas import User, Problem, Test, Solve, SolveStatus
 from src.tools.pg_catch_error_decorator import pg_catch_error_decorator
 import io
 from typing import List
 import subprocess
+import asyncio
 
 router = APIRouter()
 
@@ -46,21 +48,13 @@ async def get_tests(id_problem: int, _: User = Depends()):
 
 @router.post('/testing/{id_problem}')
 @pg_catch_error_decorator
-async def testing(id_problem: int, code: bytes = File(), user: User = Depends()):
+async def testing(id_problem: int, language: str,
+                  background_tasks: BackgroundTasks, code: bytes = File(), user: User = Depends()):
+    solve = await SolveManager.create(Solve(id_problem=id_problem, id_user=user.id,
+                                            solve_status='running', code=code, language=language))
+
     tests = await ProblemManager.get_tests(id_problem)
 
-    test_result: List[bool] = list()
-    for test in tests:
-        output_actual = subprocess.check_output(['python3.10', '-c', code.decode()], input=test.input_file)
+    background_tasks.add_task(SolveManager().solve, solve, tests, language)
 
-        output_actual = output_actual.decode().strip('\n')
-        output_expect = test.output_file.decode().strip('\n')
-
-        test_result.append({
-            'result': output_expect == output_actual,
-            'expected': output_expect,
-            'actual': output_actual,
-            'input': test.input_file.decode()
-        })
-
-    return test_result
+    return solve

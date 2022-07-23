@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.entities.user import User, UserManager
-from src.routers import auth, problem
+from src.entities.user import UserManager
+from src.entities.schemas import User
+from src.routers import auth, problem, solve
 from src.db.database import DataBase
 import configparser
 
@@ -12,6 +13,8 @@ DataBase.set_settings(config['Database']['DATABASE_URL'])
 app = FastAPI()
 app.include_router(auth.router, prefix='/auth', tags=['Auth'])
 app.include_router(problem.router, prefix='/problem', tags=['Problem'])
+app.include_router(solve.router, prefix='/solve', tags=['Solve'])
+
 app.dependency_overrides[User] = UserManager.get_current_user
 
 app.add_middleware(

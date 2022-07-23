@@ -1,19 +1,8 @@
-import datetime
 from typing import Optional, Union
-import hashlib
-import os
 from fastapi import Cookie, HTTPException, status
 import crypt
 from src.db.database import DataBase
-from pydantic import BaseModel
-
-
-class User(BaseModel):
-    id: Optional[int]
-    login: str
-    pwd: str
-    salt: Optional[str]
-    last_login: Optional[datetime.datetime]
+from src.entities.schemas import User
 
 
 class UserManager:

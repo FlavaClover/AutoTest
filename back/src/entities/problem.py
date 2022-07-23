@@ -1,20 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional, Union
 from src.db.database import DataBase
-
-
-class Problem(BaseModel):
-    id: Optional[int]
-    task: str
-    input_desc: str
-    output_desc: str
-
-
-class Test(BaseModel):
-    id: Optional[int]
-    id_problem: Union[int, Problem]
-    input_file: bytes
-    output_file: bytes
+from src.entities.schemas import Problem, Test
 
 
 class ProblemManager:

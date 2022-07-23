@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, Request, HTTPException, status, Cookie
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 import logging
-from src.entities.user import UserManager, User
-
+from src.entities.user import UserManager
+from src.entities.schemas import User
 
 router = APIRouter()
 logger = logging.getLogger('api')
