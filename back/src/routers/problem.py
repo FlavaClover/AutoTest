@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, File, Response, Depends, BackgroundTasks
 from src.entities.problem import ProblemManager
 from src.entities.solve import SolveManager
-from src.entities.schemas import User, Problem, Test, Solve, SolveStatus
+from src.entities.schemas import User, Problem, Test, Solve, SolveStatus, UserProblem
 from src.tools.pg_catch_error_decorator import pg_catch_error_decorator
 import io
 from typing import List
@@ -17,14 +17,15 @@ async def create(problem: Problem, _: User = Depends()):
     return await ProblemManager.create(problem)
 
 
-@router.get('/get/{id_problem}', response_model=Problem)
+@router.get('/{id_problem}', response_model=UserProblem)
 @pg_catch_error_decorator
-async def get(id_problem: int, _: User = Depends()):
+async def get(id_problem: int, user: User = Depends()):
     problem = await ProblemManager.get(id_problem)
     if problem is None:
         raise HTTPException(detail='Problem does not exists', status_code=status.HTTP_404_NOT_FOUND)
-    else:
-        return problem
+
+    solves = await SolveManager.get_solve_by_problem_user(problem.id, user.id)
+    return UserProblem(solves=solves, **problem.dict())
 
 
 @router.get('/all', response_model=List[Problem])

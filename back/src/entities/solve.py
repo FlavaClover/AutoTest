@@ -41,7 +41,8 @@ class SolveManager:
 
         output_actual = language.run(solve.code, test.input_file)
         if output_actual is None:
-            test_result.result = 'Runtime error'
+            test_result.result = False
+            test_result.comment = 'Runtime error'
         else:
             test_result.actual = output_actual
             test_result.result = test_result.expected.decode().strip('\n') == test_result.actual.decode().strip('\n')
@@ -71,3 +72,15 @@ class SolveManager:
         else:
             return Solve(**data)
 
+    @classmethod
+    async def get_solve_by_problem(cls, id_problem: int):
+        data = await DataBase().select('solves', where='id_problem = :id', params={'id': id_problem})
+
+        return list(map(lambda x: Solve(**x), data))
+
+    @classmethod
+    async def get_solve_by_problem_user(cls, id_problem: int, id_user: int):
+        data = await DataBase().select('solves', where='id_problem = :id_problem and id_user = :id_user',
+                                       params={'id_problem': id_problem, 'id_user': id_user})
+
+        return list(map(lambda x: Solve(**x), data))

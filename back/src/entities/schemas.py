@@ -44,12 +44,17 @@ class Solve(BaseModel):
 
 class TestResult(BaseModel):
     id_solve: int
-    result: Optional[bool]
+    result: Optional[Union[bool, str]]
     actual: Optional[bytes]
     expected: bytes
     input: bytes
+    comment: Optional[str]
 
 
 class SolveDetailed(BaseModel):
     solve: Solve
     tests: List[TestResult]
+
+
+class UserProblem(Problem):
+    solves: List[Solve]
