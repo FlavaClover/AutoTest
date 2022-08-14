@@ -17,7 +17,7 @@ async def create(problem: Problem, _: User = Depends()):
     return await ProblemManager.create(problem)
 
 
-@router.get('/{id_problem}', response_model=UserProblem)
+@router.get('/get/{id_problem}', response_model=UserProblem)
 @pg_catch_error_decorator
 async def get(id_problem: int, user: User = Depends()):
     problem = await ProblemManager.get(id_problem)

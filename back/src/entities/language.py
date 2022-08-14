@@ -25,11 +25,13 @@ class Cpp(Language):
         try:
             filename_cpp = str(uuid.uuid4()) + '.cpp'
             filename_o = filename_cpp.strip('.cpp') + '.o'
+
             with open(filename_cpp, 'wb') as cpp:
                 cpp.write(code)
 
             subprocess.run(['g++', filename_cpp, '-o', filename_o])
             output = subprocess.check_output(['./' + filename_o], input=input_data)
+
             subprocess.run(['rm', filename_cpp])
             subprocess.run(['rm', filename_o])
 
@@ -40,10 +42,10 @@ class Cpp(Language):
 
 
 class LanguageFactory:
-    def get_language(self, language):
-        if language == 'python':
+    def get_language(self, language: str):
+        if language.lower() == 'python':
             return Python()
-        elif language == 'cpp':
+        elif language.lower() == 'cpp':
             return Cpp()
         else:
             return None
